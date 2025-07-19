@@ -3,6 +3,8 @@ import Cookies from 'js-cookie'
 import { Navigate, useNavigate } from "react-router-dom"
 
 const LoginPage = () => {
+  
+
     
     const [inputValue, setInputValue] = useState('')
     const [password, setPassword] = useState('')
@@ -28,19 +30,13 @@ const LoginPage = () => {
 
     const submitForm = async (event) => {
         event.preventDefault()
-        const userDetails = {username:inputValue, password}
-        const url = '/apis/login'
-
-        const options = {
-            method : 'POST',
-            headers: {
-            'Content-Type': 'application/json', 
-    },
-
-            body: JSON.stringify(userDetails),
-        }
-       const response = await fetch(url, options)
-       
+ const response = await fetch("https://apis.ccbp.in/login", {
+  method: 'POST',
+  body: JSON.stringify({
+  "username": inputValue,
+  "password": password
+}),
+})       
         if(response.ok == true){
                   const data = await response.json()
 
@@ -48,7 +44,7 @@ const LoginPage = () => {
 
         }
         else{
-            onSubmitFailure(data.error_msg)
+            onSubmitFailure("error_msg")
         }
 
     }
@@ -120,5 +116,7 @@ const LoginPage = () => {
     </form>
   </div>
 )}
+
+
 
 export default LoginPage

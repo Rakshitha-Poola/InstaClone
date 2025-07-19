@@ -23,7 +23,7 @@ const Header = () => {
     setSearchTerm(e.target.value);
   };
 
-  const isMobileHome = location.pathname === "/"; // ✅ for mobile search only
+  const isMobileHome = location.pathname === "/";
 
   return (
     <header className="w-full bg-white shadow-sm">

@@ -9,7 +9,7 @@ const Profile = () => {
   const jwtToken = Cookies.get("jwt_token")
 
   const getPostDetails = async () => {
-    const url = "/apis/insta-share/my-profile"
+    const url = "https://apis.ccbp.in/insta-share/my-profile"
     const options = {
       method: "GET",
       headers: {

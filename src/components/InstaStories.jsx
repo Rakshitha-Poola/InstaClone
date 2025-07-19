@@ -28,7 +28,7 @@ const InstaStories = () => {
   const getStories = async () => {
     setApiStatus(apiStatusConstants.inProgress);
     const jwtToken = Cookies.get('jwt_token');
-    const url = '/apis/insta-share/stories';
+    const url = 'https://apis.ccbp.in/insta-share/stories';
     const options = {
       headers: {
         Authorization: `Bearer ${jwtToken}`,
