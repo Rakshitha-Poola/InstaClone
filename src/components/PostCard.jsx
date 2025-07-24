@@ -26,8 +26,8 @@ const PostCard = () => {
     const jwtToken = Cookies.get("jwt_token")
     const url = "https://apis.ccbp.in/insta-share/posts"
       searchTerm.trim() === ""
-        ? "/apis/insta-share/posts"
-        : `/apis/insta-share/posts?search=${searchTerm}`
+        ? "https://apis.ccbp.in/insta-share/posts"
+        : `https://apis.ccbp.in/insta-share/posts?search=${searchTerm}`
 
     const options = {
       method: "GET",
