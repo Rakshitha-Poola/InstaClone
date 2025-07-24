@@ -24,8 +24,8 @@ const PostCard = () => {
   const fetchPosts = async () => {
     setIsLoading(true)
     const jwtToken = Cookies.get("jwt_token")
-    const url = "https://apis.ccbp.in/insta-share/posts"
-      searchTerm.trim() === ""
+    let url = "https://apis.ccbp.in/insta-share/posts"
+      url = searchTerm.trim() === ""
         ? "https://apis.ccbp.in/insta-share/posts"
         : `https://apis.ccbp.in/insta-share/posts?search=${searchTerm}`
 
