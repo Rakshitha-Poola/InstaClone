@@ -23,11 +23,18 @@ const PostCard = () => {
   // 🔁 Fetch posts depending on search
   const fetchPosts = async () => {
     setIsLoading(true)
+    // console.log("hiii")
     const jwtToken = Cookies.get("jwt_token")
     let url = "https://apis.ccbp.in/insta-share/posts"
+<<<<<<< HEAD
       url = searchTerm.trim() === ""
+=======
+     url =  searchTerm.trim() === ""
+>>>>>>> fff2387 (second commit)
         ? "https://apis.ccbp.in/insta-share/posts"
         : `https://apis.ccbp.in/insta-share/posts?search=${searchTerm}`
+        
+
 
     const options = {
       method: "GET",
