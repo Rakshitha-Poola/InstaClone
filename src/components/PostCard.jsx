@@ -15,16 +15,17 @@ const PostCard = () => {
   const [likedPosts, setLikedPosts] = useState({});
   const [animating, setAnimating] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [newComments, setNewComments] = useState({});
   const tapTimers = useRef({});
   const doubleTapDelay = 300;
 
   const { searchTerm } = useContext(SearchContext);
 
+  // Fetch posts from API
   const fetchPosts = async () => {
     setIsLoading(true);
     const jwtToken = Cookies.get("jwt_token");
     const trimmedSearch = searchTerm.trim();
-
     const url =
       trimmedSearch === ""
         ? "https://apis.ccbp.in/insta-share/posts"
@@ -57,6 +58,7 @@ const PostCard = () => {
     fetchPosts();
   }, [searchTerm]);
 
+  // Toggle like
   const handleLikeToggle = (post_id) => {
     const isCurrentlyLiked = likedPosts[post_id] || false;
     const newLikeStatus = !isCurrentlyLiked;
@@ -88,10 +90,7 @@ const PostCard = () => {
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
-          setLikedPosts((prev) => ({
-            ...prev,
-            [post_id]: isCurrentlyLiked,
-          }));
+          setLikedPosts((prev) => ({ ...prev, [post_id]: isCurrentlyLiked }));
         }
       } catch (err) {
         console.error("Error updating like:", err);
@@ -101,6 +100,7 @@ const PostCard = () => {
     updateLikeStatusOnServer();
   };
 
+  // Double tap for like
   const handleDoubleClick = (post_id) => {
     if (!likedPosts[post_id]) {
       handleLikeToggle(post_id);
@@ -122,11 +122,39 @@ const PostCard = () => {
       tapTimers.current[post_id] = 0;
     } else {
       tapTimers.current[post_id] = now;
-
       setTimeout(() => {
         tapTimers.current[post_id] = 0;
       }, doubleTapDelay);
     }
+  };
+
+  const handleCommentChange = (postId, text) => {
+    setNewComments((prev) => ({ ...prev, [postId]: text }));
+  };
+
+  const handleAddComment = (postId) => {
+    const commentText = newComments[postId]?.trim();
+    if (!commentText) return;
+
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.post_id === postId
+          ? {
+              ...post,
+              comments: [
+                ...post.comments,
+                {
+                  user_id: "temp_user",
+                  user_name: "You",
+                  comment: commentText,
+                },
+              ],
+            }
+          : post
+      )
+    );
+
+    setNewComments((prev) => ({ ...prev, [postId]: "" }));
   };
 
   if (isLoading) {
@@ -170,11 +198,7 @@ const PostCard = () => {
         const showHeart = animating[post_id];
 
         return (
-          <div
-            key={post_id}
-            className="bg-white w-full rounded-md mb-6 shadow-sm relative"
-          >
-            {/* User Info */}
+          <div key={post_id} className="bg-white w-full rounded-md mb-6 shadow-sm relative">
             <div className="flex items-center p-4">
               <img
                 src={profile_pic}
@@ -184,7 +208,7 @@ const PostCard = () => {
               <h1 className="font-semibold text-sm">{user_name}</h1>
             </div>
 
-            {/* Post Image - now works on mobile */}
+            {/* Post Image with double tap support */}
             <div
               className="relative select-none"
               onTouchStart={() => handleTap(post_id)}
@@ -203,7 +227,6 @@ const PostCard = () => {
               )}
             </div>
 
-            {/* Icons */}
             <div className="flex items-center space-x-4 px-4 py-2 text-gray-700 text-xl">
               <button onClick={() => handleLikeToggle(post_id)}>
                 {isLiked ? (
@@ -216,31 +239,40 @@ const PostCard = () => {
               <FaShare />
             </div>
 
-            {/* Like Count */}
             <p className="px-4 font-semibold text-sm">{likes_count} likes</p>
 
-            {/* Caption */}
             <p className="px-4 mt-1 text-sm">
               <span className="font-semibold mr-1">{user_name}</span>
               {post_details.caption}
             </p>
 
-            {/* Comments */}
             {comments.length > 0 && (
               <div className="px-4 mt-1">
-                {comments.map((comment) => (
-                  <p
-                    key={comment.comment_id || comment.user_id + comment.comment}
-                    className="text-sm text-gray-700"
-                  >
-                    <span className="font-semibold">{comment.user_name}</span>{" "}
-                    {comment.comment}
+                {comments.map((comment, idx) => (
+                  <p key={idx} className="text-sm text-gray-700">
+                    <span className="font-semibold">{comment.user_name}</span> {comment.comment}
                   </p>
                 ))}
               </div>
             )}
 
-            {/* Time */}
+            {/* Comment Input */}
+            <div className="px-4 mt-2 mb-4 flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                value={newComments[post_id] || ""}
+                onChange={(e) => handleCommentChange(post_id, e.target.value)}
+                className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded"
+              />
+              <button
+                onClick={() => handleAddComment(post_id)}
+                className="text-sm text-blue-500 font-semibold"
+              >
+                Post
+              </button>
+            </div>
+
             <p className="px-4 py-2 text-xs text-gray-400">{created_at}</p>
           </div>
         );
