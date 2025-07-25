@@ -1,70 +1,67 @@
-import { useEffect, useRef, useState, useContext } from "react"
-import Cookies from "js-cookie"
+import { useEffect, useRef, useState, useContext } from "react";
+import Cookies from "js-cookie";
 import {
   FaHeart,
   FaRegHeart,
   FaRegComment,
   FaShare,
-} from "react-icons/fa"
-import { ClipLoader } from "react-spinners"
-import { SearchContext } from "../Context/SearchContext"
-import "./PostCard.css"
+} from "react-icons/fa";
+import { ClipLoader } from "react-spinners";
+import { SearchContext } from "../Context/SearchContext";
+import "./PostCard.css";
 
 const PostCard = () => {
-  const [posts, setPosts] = useState([])
-  const [likedPosts, setLikedPosts] = useState({})
-  const [animating, setAnimating] = useState({})
-  const [isLoading, setIsLoading] = useState(true)
-  const tapTimers = useRef({})
-  const doubleTapDelay = 300
+  const [posts, setPosts] = useState([]);
+  const [likedPosts, setLikedPosts] = useState({});
+  const [animating, setAnimating] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const tapTimers = useRef({});
+  const doubleTapDelay = 300;
 
-  const { searchTerm } = useContext(SearchContext)
+  const { searchTerm } = useContext(SearchContext);
 
-  // 🔁 Fetch posts depending on search
   const fetchPosts = async () => {
-    setIsLoading(true)
-    // console.log("hiii")
-    const jwtToken = Cookies.get("jwt_token")
-    let url = "https://apis.ccbp.in/insta-share/posts"
-      url = searchTerm.trim() === ""
-     url =  searchTerm.trim() === ""
-        ? "https://apis.ccbp.in/insta-share/posts"
-        : `https://apis.ccbp.in/insta-share/posts?search=${searchTerm}`
-        
+    setIsLoading(true);
+    const jwtToken = Cookies.get("jwt_token");
+    const trimmedSearch = searchTerm.trim();
 
+    const url =
+      trimmedSearch === ""
+        ? "https://apis.ccbp.in/insta-share/posts"
+        : `https://apis.ccbp.in/insta-share/posts?search=${trimmedSearch}`;
 
     const options = {
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwtToken}`,
       },
-    }
+    };
 
     try {
-      const response = await fetch(url, options)
+      const response = await fetch(url, options);
       if (response.ok) {
-        const data = await response.json()
-        setPosts(data.posts)
+        const data = await response.json();
+        setPosts(data.posts);
       } else {
-        setPosts([])
+        setPosts([]);
       }
     } catch (error) {
-      console.error("Fetch error:", error)
-      setPosts([])
+      console.error("Fetch error:", error);
+      setPosts([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchPosts()
-  }, [searchTerm])
+    fetchPosts();
+  }, [searchTerm]);
 
   const handleLikeToggle = (post_id) => {
-    const isCurrentlyLiked = likedPosts[post_id] || false
-    const newLikeStatus = !isCurrentlyLiked
+    const isCurrentlyLiked = likedPosts[post_id] || false;
+    const newLikeStatus = !isCurrentlyLiked;
 
-    setLikedPosts((prev) => ({ ...prev, [post_id]: newLikeStatus }))
+    setLikedPosts((prev) => ({ ...prev, [post_id]: newLikeStatus }));
     setPosts((prev) =>
       prev.map((post) =>
         post.post_id === post_id
@@ -74,11 +71,11 @@ const PostCard = () => {
             }
           : post
       )
-    )
+    );
 
     const updateLikeStatusOnServer = async () => {
-      const jwtToken = Cookies.get("jwt_token")
-      const url = `https://apis.ccbp.in/insta-share/posts/${post_id}/like`
+      const jwtToken = Cookies.get("jwt_token");
+      const url = `https://apis.ccbp.in/insta-share/posts/${post_id}/like`;
       const options = {
         method: "POST",
         headers: {
@@ -86,53 +83,58 @@ const PostCard = () => {
           Authorization: `Bearer ${jwtToken}`,
         },
         body: JSON.stringify({ like_status: newLikeStatus }),
-      }
+      };
 
       try {
-        const response = await fetch(url, options)
+        const response = await fetch(url, options);
         if (!response.ok) {
           setLikedPosts((prev) => ({
             ...prev,
             [post_id]: isCurrentlyLiked,
-          }))
+          }));
         }
       } catch (err) {
-        console.error("Error updating like:", err)
+        console.error("Error updating like:", err);
       }
-    }
+    };
 
-    updateLikeStatusOnServer()
-  }
+    updateLikeStatusOnServer();
+  };
 
   const handleDoubleClick = (post_id) => {
     if (!likedPosts[post_id]) {
-      handleLikeToggle(post_id)
+      handleLikeToggle(post_id);
     }
-    setAnimating((prev) => ({ ...prev, [post_id]: true }))
+    setAnimating((prev) => ({ ...prev, [post_id]: true }));
     setTimeout(() => {
-      setAnimating((prev) => ({ ...prev, [post_id]: false }))
-    }, 1000)
-  }
+      setAnimating((prev) => ({ ...prev, [post_id]: false }));
+    }, 1000);
+  };
 
   const handleTap = (post_id) => {
-    const now = Date.now()
+    const now = Date.now();
+
     if (
       tapTimers.current[post_id] &&
       now - tapTimers.current[post_id] < doubleTapDelay
     ) {
-      handleDoubleClick(post_id)
-      tapTimers.current[post_id] = 0
+      handleDoubleClick(post_id);
+      tapTimers.current[post_id] = 0;
     } else {
-      tapTimers.current[post_id] = now
+      tapTimers.current[post_id] = now;
+
+      setTimeout(() => {
+        tapTimers.current[post_id] = 0;
+      }, doubleTapDelay);
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-40">
         <ClipLoader color="#3b82f6" size={35} />
       </div>
-    )
+    );
   }
 
   if (posts.length === 0) {
@@ -148,7 +150,7 @@ const PostCard = () => {
           Try different keyword or search again
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -162,10 +164,10 @@ const PostCard = () => {
           likes_count,
           comments,
           created_at,
-        } = each
+        } = each;
 
-        const isLiked = likedPosts[post_id] || false
-        const showHeart = animating[post_id]
+        const isLiked = likedPosts[post_id] || false;
+        const showHeart = animating[post_id];
 
         return (
           <div
@@ -182,16 +184,17 @@ const PostCard = () => {
               <h1 className="font-semibold text-sm">{user_name}</h1>
             </div>
 
-            {/* Post Image */}
+            {/* Post Image - now works on mobile */}
             <div
-              className="relative"
+              className="relative select-none"
+              onTouchStart={() => handleTap(post_id)}
               onClick={() => handleTap(post_id)}
-              onDoubleClick={() => handleDoubleClick(post_id)}
             >
               <img
                 src={post_details.image_url}
                 alt="post"
-                className="w-full max-h-[600px] object-cover"
+                className="w-full max-h-[600px] object-cover pointer-events-none select-none"
+                draggable={false}
               />
               {showHeart && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -226,7 +229,10 @@ const PostCard = () => {
             {comments.length > 0 && (
               <div className="px-4 mt-1">
                 {comments.map((comment) => (
-                  <p key={comment.user_id} className="text-sm text-gray-700">
+                  <p
+                    key={comment.comment_id || comment.user_id + comment.comment}
+                    className="text-sm text-gray-700"
+                  >
                     <span className="font-semibold">{comment.user_name}</span>{" "}
                     {comment.comment}
                   </p>
@@ -237,10 +243,10 @@ const PostCard = () => {
             {/* Time */}
             <p className="px-4 py-2 text-xs text-gray-400">{created_at}</p>
           </div>
-        )
+        );
       })}
     </div>
-  )
-}
+  );
+};
 
-export default PostCard
+export default PostCard;

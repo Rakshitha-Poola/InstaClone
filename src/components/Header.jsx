@@ -29,11 +29,14 @@ const Header = () => {
     <header className="w-full bg-white shadow-sm">
       <div className="flex justify-around items-center px-4 py-2">
         <div className="flex items-center gap-2">
+          <Link to="/">
           <img
             src="https://res.cloudinary.com/dqxbyu1dj/image/upload/v1752211019/Group_ylohfc.png"
             className="h-8 w-12"
             alt="logo"
           />
+          </Link>
+          
           <h1 className="text-lg font-semibold">Insta Share</h1>
         </div>
 
