@@ -1,16 +1,16 @@
 // InstaStoriesWithModal.jsx
 import { useEffect, useState, useRef } from "react";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Slider from "react-slick";
 import { ClipLoader } from "react-spinners";
 
 const apiStatusConstants = {
-  initial: 'INITIAL',
-  inProgress: 'IN_PROGRESS',
-  success: 'SUCCESS',
-  failure: 'FAILURE',
+  initial: "INITIAL",
+  inProgress: "IN_PROGRESS",
+  success: "SUCCESS",
+  failure: "FAILURE",
 };
 
 const getVisibleSlides = () => {
@@ -23,18 +23,22 @@ const InstaStories = () => {
   const [apiStatus, setApiStatus] = useState(apiStatusConstants.initial);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [visibleSlides, setVisibleSlides] = useState(getVisibleSlides());
-  const [selectedStory, setSelectedStory] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [progress, setProgress] = useState(0);
   const sliderRef = useRef(null);
+  const timerRef = useRef(null);
+
+  const STORY_DURATION = 3000; // 3 sec per story
 
   const getStories = async () => {
     setApiStatus(apiStatusConstants.inProgress);
-    const jwtToken = Cookies.get('jwt_token');
-    const url = 'https://apis.ccbp.in/insta-share/stories';
+    const jwtToken = Cookies.get("jwt_token");
+    const url = "https://apis.ccbp.in/insta-share/stories";
     const options = {
       headers: {
         Authorization: `Bearer ${jwtToken}`,
       },
-      method: 'GET',
+      method: "GET",
     };
 
     try {
@@ -54,17 +58,48 @@ const InstaStories = () => {
   useEffect(() => {
     getStories();
     const handleResize = () => setVisibleSlides(getVisibleSlides());
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Handle story progress + auto move
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      setProgress(0);
+      clearInterval(timerRef.current);
+
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const percentage = Math.min((elapsed / STORY_DURATION) * 100, 100);
+        setProgress(percentage);
+
+        if (percentage >= 100) {
+          clearInterval(timerRef.current);
+          if (selectedIndex < stories.length - 1) {
+            setSelectedIndex((prev) => prev + 1);
+          } else {
+            setSelectedIndex(null); // close if last story
+          }
+        }
+      }, 50);
+
+      return () => clearInterval(timerRef.current);
+    }
+  }, [selectedIndex]);
 
   const PrevArrow = ({ onClick, disabled }) => (
     <button
-      className={`absolute left-[-10px] md:left-[-45px] top-[45px] transform -translate-y-1/2 z-10 ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+      className={`absolute left-[-10px] md:left-[-45px] top-[45px] transform -translate-y-1/2 z-10 ${
+        disabled ? "opacity-30 cursor-not-allowed" : ""
+      }`}
       onClick={onClick}
       disabled={disabled}
     >
-      <svg className="md:size-6 size-4.5 ml-3 bg-[#989898] text-white p-1 rounded-xl" viewBox="0 0 24 24">
+      <svg
+        className="md:size-6 size-4.5 ml-3 bg-[#989898] text-white p-1 rounded-xl"
+        viewBox="0 0 24 24"
+      >
         <path d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" />
       </svg>
     </button>
@@ -72,11 +107,16 @@ const InstaStories = () => {
 
   const NextArrow = ({ onClick, disabled }) => (
     <button
-      className={`absolute right-[5px] md:right-[-25px] top-[35px] md:top-[45px] transform -translate-y-1/2 z-10 ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+      className={`absolute right-[5px] md:right-[-25px] top-[35px] md:top-[45px] transform -translate-y-1/2 z-10 ${
+        disabled ? "opacity-30 cursor-not-allowed" : ""
+      }`}
       onClick={onClick}
       disabled={disabled}
     >
-      <svg className="md:size-6 size-4.5 bg-[#989898] text-white p-1 rounded-xl" viewBox="0 0 24 24">
+      <svg
+        className="md:size-6 size-4.5 bg-[#989898] text-white p-1 rounded-xl"
+        viewBox="0 0 24 24"
+      >
         <path d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z" />
       </svg>
     </button>
@@ -89,8 +129,14 @@ const InstaStories = () => {
     slidesToShow: visibleSlides,
     slidesToScroll: 1,
     arrows: window.innerWidth > 768,
-    nextArrow: window.innerWidth > 768 ? <NextArrow disabled={currentSlide >= stories.length - visibleSlides} /> : null,
-    prevArrow: window.innerWidth > 768 ? <PrevArrow disabled={currentSlide === 0} /> : null,
+    nextArrow:
+      window.innerWidth > 768 ? (
+        <NextArrow disabled={currentSlide >= stories.length - visibleSlides} />
+      ) : null,
+    prevArrow:
+      window.innerWidth > 768 ? (
+        <PrevArrow disabled={currentSlide === 0} />
+      ) : null,
     beforeChange: (_, next) => setCurrentSlide(next),
     responsive: [
       {
@@ -108,9 +154,20 @@ const InstaStories = () => {
 
   const renderFailureView = () => (
     <div className="text-center py-6">
-      <img src='https://res.cloudinary.com/dqxbyu1dj/image/upload/v1752386878/Group_7522_zj1zpb.png' alt="error" className="w-32 mx-auto" />
-      <h1 className="text-lg font-semibold mt-4">Something went wrong. Please try again</h1>
-      <button onClick={getStories} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Try Again</button>
+      <img
+        src="https://res.cloudinary.com/dqxbyu1dj/image/upload/v1752386878/Group_7522_zj1zpb.png"
+        alt="error"
+        className="w-32 mx-auto"
+      />
+      <h1 className="text-lg font-semibold mt-4">
+        Something went wrong. Please try again
+      </h1>
+      <button
+        onClick={getStories}
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        Try Again
+      </button>
     </div>
   );
 
@@ -118,10 +175,10 @@ const InstaStories = () => {
     <div className="w-full max-w-[1000px] mx-auto py-6">
       <div className="relative">
         <Slider ref={sliderRef} {...sliderSettings}>
-          {stories.map((story) => (
+          {stories.map((story, index) => (
             <div
               key={story.user_id}
-              onClick={() => setSelectedStory(story)}
+              onClick={() => setSelectedIndex(index)}
               className="text-center px-[1px] sm:px-[2px] flex flex-col justify-center items-center cursor-pointer"
             >
               <img
@@ -129,23 +186,38 @@ const InstaStories = () => {
                 alt={story.user_name}
                 className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover border-[3px] border-pink-600"
               />
-              <p className="text-xs sm:text-sm mt-1 w-20 truncate">{story.user_name}</p>
+              <p className="text-xs sm:text-sm mt-1 w-20 truncate">
+                {story.user_name}
+              </p>
             </div>
           ))}
         </Slider>
       </div>
 
-      {selectedStory && (
+      {selectedIndex !== null && (
         <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 z-50 flex flex-col justify-center items-center">
+          {/* Close Button */}
           <button
-            onClick={() => setSelectedStory(null)}
+            onClick={() => setSelectedIndex(null)}
             className="absolute top-4 right-4 text-white text-2xl"
           >
             &times;
           </button>
-          <h2 className="text-white mb-4 text-xl font-semibold">{selectedStory.user_name}'s Story</h2>
+
+          {/* Progress Bar */}
+          <div className="w-[90%] max-w-[600px] h-1 bg-gray-600 rounded mb-4">
+            <div
+              className="h-1 bg-white rounded"
+              style={{ width: `${progress}%`, transition: "width 50ms linear" }}
+            />
+          </div>
+
+          {/* Story Content */}
+          <h2 className="text-white mb-4 text-xl font-semibold">
+            {stories[selectedIndex].user_name}'s Story
+          </h2>
           <img
-            src={selectedStory.story_url}
+            src={stories[selectedIndex].story_url}
             alt="story"
             className="w-[90%] max-w-[600px] h-auto rounded shadow-lg"
           />
